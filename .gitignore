@@ -1,0 +1,13 @@
+/.env
+/.env.*
+/docs/
+/data/
+/scrape/data/LoanData_Bondora.csv
+/scrape/data/raw/
+/scrape/data/extracted/
+__pycache__/
+*.py[cod]
+*.log
+.DS_Store
+.vscode/
+.idea/

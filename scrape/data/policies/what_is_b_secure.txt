@@ -1,0 +1,5 @@
+SOURCE URL: https://bondora.fi
+TOPIC: What Is B Secure
+QUESTION: What is B-Secure?
+--- POLICY ANSWER ---
+B-Secure is an add-on service that costs €10 per month. It allows borrowers to automatically restructure their loan terms online without manual approval. Features include changing the monthly payment date, requesting a payment holiday (pausing principal repayments), or extending the total loan period to reduce monthly bills.

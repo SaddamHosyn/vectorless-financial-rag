@@ -1,0 +1,12 @@
+requests
+psycopg2-binary
+fastapi
+uvicorn
+llama-index
+llama-index-llms-openai
+sqlalchemy
+python-dotenv
+edgartools
+sec2md
+openai
+tiktoken

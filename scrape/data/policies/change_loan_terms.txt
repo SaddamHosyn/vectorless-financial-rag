@@ -1,0 +1,33 @@
+SOURCE URL: https://help.bondora.fi/hc/en-fi/articles/24990925501586-How-can-I-change-the-loan-terms
+
+TOPIC: Change Loan Terms
+
+QUESTION: How can I change the loan terms?
+
+--- POLICY ANSWER ---
+
+You can find this functionality in your self-service account under the section “Change loan schedule”. The changes will be applied without any additional cost.
+What are the rescheduling possibilities?
+Choose your payment date (1.-27 of each month.)
+Change your loan duration (1–120 months. Period can be changed to 3, 6, 12, 24, 48, 60 or 120 months.)
+Take a payment holiday (you will pay only interest and commission during the period of 3, 6 or 12 months.)
+Confirm payment schedule changes
+Once you've made the changes in your payment schedule, follow these steps:
+Click
+Show new schedule
+and review it carefully.
+To see a detailed version, click
+Sign
+, then on the next screen click
+Payment schedule
+to download and check the PDF.
+If everything looks good, click
+Sign
+again and follow the on-screen instructions.
+Who can change their payment schedule?
+You qualify if:
+If there is one loan agreement, you must have paid at least one full monthly payment within the valid payment schedule.
+If you have more than one loan, you can reschedule only after you have paid at least the first monthly payment under the new agreement in full.
+If you have recently changed your schedule, you can use the service again if you have paid the full amount of at least one new scheduled monthly payment.
+You can change your payment schedule as long as the contract is not terminated/loan defaulted.
+If you have outstanding debt/invoices- in this case, your debt will be added to the new schedule, which may increase your future monthly payments.
