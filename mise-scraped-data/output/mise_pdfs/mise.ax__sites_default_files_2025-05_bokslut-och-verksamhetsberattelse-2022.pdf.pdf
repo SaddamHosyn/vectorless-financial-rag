@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+        <html>
+        <meta charset='utf-8'>
+        <head>
+            <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Montserrat:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i'>
+            <script src='https://cdn.tailwindcss.com'></script>
+            <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css' integrity='sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w==' crossorigin='anonymous' referrerpolicy='no-referrer'/>
+            <style>
+            .arrow-right:after {
+              content: '';
+              display: inline-block !important;
+              width: 0;
+              height: 0;
+              border-left: 8px solid #C8A962;
+              border-top: 8px solid transparent;
+              border-bottom: 8px solid transparent;
+              vertical-align: middle;
+            }
+
+            .arrow-right:before {
+              width: 20px;
+              height: 2px;
+              background: #C8A962;
+              content: '';
+              display: inline-block;
+              vertical-align: middle;
+            }
+            </style>
+        </head>
+        <body style='font-family: Montserrat, sans-serif;' class='bg-gray-50 text-base text-slate-700'>
+            <div class='grid'>
+                <div>
+                    <nav class='container w-640 mx-auto pt-20 pb-10 bg-gray-50'>
+                        <p>
+                            <span class='text-5xl'>
+                                Status Code
+                                <span class='text-7xl'>
+                                    502
+                                </span>
+                            </span>
+                        </p>
+                        <p>
+                            You tried to access <span class='font-bold'>mise.ax</span><br>
+                            Bad Gateway @ 07/Jul/2026:20:50:21 +0000 UTC<br>
+                            Your IP address: 79.133.10.34
+                        </p>
+                    </nav>
+                </div>
+                <div class='bg-gray-100'>
+                    <section class='container w-640 mx-auto p-10'>
+                        <div class='flex justify-around'>
+                            <div>
+                                <div class='grid justify-items-center'>
+                                    <div class='w-20 h-28 fill-slate-700'>
+                                        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'><path d='M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0S96 57.3 96 128s57.3 128 128 128zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z'/></svg>
+                                    </div>
+                                <div>
+                                <p class='text-center'>
+                                    <span>You</span><br>
+                                    <span class='text-green-600'>Browser</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+            <div>
+              <div class='grid justify-items-center'>
+                <div class='w-40 h-28 text-center'>
+                  <span class='text-sm font-bold text-green-600'>Request</span>
+                  <div class='flex items-center justify-center'>
+                    <div class='w-20 h-1 bg-green-600'></div>
+                    <div class='h-0 w-0 border-y-8 border-y-transparent border-l-[14px] border-l-green-600'></div>
+                  </div>
+                  <div class='flex items-center justify-center pt-5'>
+                    <div class='h-0 w-0 border-y-8 border-y-transparent border-r-[14px] border-r-green-600'></div>
+                    <div class='w-20 h-1 bg-green-600'></div>
+                  </div>
+                  <span class='text-sm font-bold text-green-600'>Response</span>
+                </div>
+                <div class='w-10 fill-green-600'>
+                  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path d='M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z'/></svg>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class='grid justify-items-center'>
+                <div class='w-28 h-28 fill-slate-700'>
+                  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 512'><path d='M0 336c0 79.5 64.5 144 144 144H512c70.7 0 128-57.3 128-128c0-61.9-44-113.6-102.4-125.4c4.1-10.7 6.4-22.4 6.4-34.6c0-53-43-96-96-96c-19.7 0-38.1 6-53.3 16.2C367 64.2 315.3 32 256 32C167.6 32 96 103.6 96 192c0 2.7 .1 5.4 .2 8.1C40.2 219.8 0 273.2 0 336z'/></svg>
+                </div>
+                <div>
+                  <p class='text-center'>
+                    <span>ARN2</span><br>
+                    <span class='text-green-600'>Baffin Bay Networks</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class='grid justify-items-center'>
+                <div class='w-40 h-28 text-center'>
+                  <span class='text-sm font-bold text-green-600'>Request</span>
+                  <div class='flex items-center justify-center'>
+                    <div class='w-20 h-1 bg-green-600'></div>
+                    <div class='h-0 w-0 border-y-8 border-y-transparent border-l-[14px] border-l-green-600'></div>
+                  </div>
+                  <div class='flex items-center justify-center pt-5'>
+                    <div class='h-0 w-0 border-y-8 border-y-transparent border-r-[14px] border-r-red-600'></div>
+                    <div class='w-20 h-1 bg-red-600'></div>
+                  </div>
+                  <span class='text-sm font-bold text-red-600'>Response</span>
+                </div>
+                <div class='w-10 fill-red-600'>
+                  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path d='M367.2 412.5L99.5 144.8C77.1 176.1 64 214.5 64 256c0 106 86 192 192 192c41.5 0 79.9-13.1 111.2-35.5zm45.3-45.3C434.9 335.9 448 297.5 448 256c0-106-86-192-192-192c-41.5 0-79.9 13.1-111.2 35.5L412.5 367.2zM512 256c0 141.4-114.6 256-256 256S0 397.4 0 256S114.6 0 256 0S512 114.6 512 256z'/></svg>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class='grid justify-items-center'>
+                <div class='w-24 h-28 fill-slate-700'>
+                  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><path d='M64 32C28.7 32 0 60.7 0 96v64c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zM344 152c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24zm96-24c0 13.3-10.7 24-24 24s-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24zM64 288c-35.3 0-64 28.7-64 64v64c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V352c0-35.3-28.7-64-64-64H64zM344 408c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24zm104-24c0 13.3-10.7 24-24 24s-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24z'/></svg>
+                </div>
+                <div>
+                  <p class='text-center'>
+                    <span>Website</span><br>
+                    <span class='text-red-600'>Server</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class='pt-16'>
+        <footer class='container w-640 mx-auto h-full'>
+          <div class='flex justify-end pr-24'>
+            <div class='w-56'>
+              <p class='font-bold text-sm'>Why did this happen?</p>
+              <p class='text-sm'>
+                We have received an invalid response from the server.<br><br>
+                Please try again in a few minutes to see if the issue is solved or contact the website administrator.
+              </p>
+            </div>
+            <div class='w-56 ml-20'>
+              <p class='font-bold text-sm'>If you are the administrator</p>
+              <p class='text-sm'>
+                Please ensure the backend server's HTTP service is running without reporting any errors.
+              </p>
+            </div>
+          </div>
+          <div class='pt-14 text-center'>
+            <span class='text-sm'>This asset is protected by <a href='https://baffinbaynetworks.com' class='underline'>Baffin Bay Networks</a></span>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>
