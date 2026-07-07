@@ -1,5 +1,0 @@
-SOURCE URL: https://bondora.fi
-TOPIC: Debt Collection Process
-QUESTION: What is the debt collection procedure for active loans?
---- POLICY ANSWER ---
-If a payment is missed, automated reminders are sent via SMS and email. On day 7 of arrears, late payment fees accumulate. If a loan is unpaid for over 60 days, the agreement is terminated. Bondora then registers the default with credit bureaus and passes the file to local court or bailiff collection agencies to recover outstanding funds.

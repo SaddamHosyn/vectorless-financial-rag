@@ -2,6 +2,7 @@
 /.env.*
 /docs/
 /data/
+/scrape/data/
 /scrape/data/LoanData_Bondora.csv
 /scrape/data/raw/
 /scrape/data/extracted/
@@ -11,3 +12,4 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
+mise-scraped-data/

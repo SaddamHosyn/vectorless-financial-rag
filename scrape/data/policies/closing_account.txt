@@ -1,5 +1,0 @@
-SOURCE URL: https://bondora.fi
-TOPIC: Closing Account
-QUESTION: How can I close my Bondora account?
---- POLICY ANSWER ---
-To close your account, all active loans must be fully repaid, and your account balance must be exactly zero. Log into your dashboard, go to settings, and submit a close request. Due to EU anti-money laundering (AML) laws and financial data retention rules, your transaction history will be securely archived and cannot be completely deleted for 5 to 7 years.
