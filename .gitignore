@@ -1,11 +1,8 @@
 /.env
 /.env.*
 /docs/
+/scrape/
 /data/
-/scrape/data/
-/scrape/data/LoanData_Bondora.csv
-/scrape/data/raw/
-/scrape/data/extracted/
 __pycache__/
 *.py[cod]
 *.log
