@@ -30,6 +30,33 @@ def get_client():
     return _client
 
 
+def ensure_postgres_schema(conn):
+    cursor = conn.cursor()
+    cursor.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS documents (
+            id SERIAL PRIMARY KEY,
+            filename TEXT NOT NULL,
+            source_url TEXT,
+            file_type VARCHAR(20),
+            language VARCHAR(10) DEFAULT 'en',
+            scraped_at TIMESTAMP DEFAULT NOW()
+        );
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS document_chunks (
+            id SERIAL PRIMARY KEY,
+            document_id INT REFERENCES documents(id) ON DELETE CASCADE,
+            chunk_text TEXT NOT NULL,
+            chunk_index INT,
+            embedding VECTOR(768),
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+    """)
+    conn.commit()
+    cursor.close()
+
+
 def try_get_postgres_connection():
     try:
         import psycopg2
@@ -39,8 +66,9 @@ def try_get_postgres_connection():
             dbname=os.environ.get("DB_NAME", "sec_rag_db"),
             user=os.environ.get("DB_USER", "raguser"),
             password=os.environ.get("DB_PASSWORD", "ragpassword"),
-            connect_timeout=3
+            connect_timeout=5
         )
+        ensure_postgres_schema(conn)
         return conn, "postgres"
     except Exception as e:
         print(f"PostgreSQL unavailable ({e}). Falling back to SQLite vector storage.")
