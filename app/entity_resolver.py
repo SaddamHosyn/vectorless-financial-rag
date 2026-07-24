@@ -8,51 +8,55 @@ def get_connection():
 
 def resolve_form(user_input: str):
     """
-    Takes a raw string like 'skrotfordon' and returns the closest matching form.
+    Takes a raw string and returns the closest matching form/document from forms_directory.
+    Returns None if PostgreSQL is offline or no match is found.
     """
-    conn = get_connection()
-    cursor = conn.cursor()
-
     try:
-        cursor.execute(
-            "SELECT form_name, category, source_url FROM forms_directory WHERE form_name ILIKE %s LIMIT 1;",
-            (f"%{user_input}%",),
-        )
-        result = cursor.fetchone()
-        if result:
-            return {
-                "form_name": result[0],
-                "category": result[1],
-                "source_url": result[2],
-                "match_type": "exact_contains",
-            }
+        conn = get_connection()
+        cursor = conn.cursor()
 
-        cursor.execute(
-            """SELECT form_name, category, source_url, similarity(form_name, %s) AS sim
-               FROM forms_directory
-               WHERE form_name %% %s
-               ORDER BY sim DESC
-               LIMIT 1;""",
-            (user_input, user_input),
-        )
-        result = cursor.fetchone()
-        if result:
-            return {
-                "form_name": result[0],
-                "category": result[1],
-                "source_url": result[2],
-                "match_type": "fuzzy_name",
-                "similarity": result[3],
-            }
+        try:
+            cursor.execute(
+                "SELECT form_name, category, source_url FROM forms_directory WHERE form_name ILIKE %s LIMIT 1;",
+                (f"%{user_input}%",),
+            )
+            result = cursor.fetchone()
+            if result:
+                return {
+                    "form_name": result[0],
+                    "category": result[1],
+                    "source_url": result[2],
+                    "match_type": "exact_contains",
+                }
 
+            cursor.execute(
+                """SELECT form_name, category, source_url, similarity(form_name, %s) AS sim
+                   FROM forms_directory
+                   WHERE form_name % %s
+                   ORDER BY sim DESC
+                   LIMIT 1;""",
+                (user_input, user_input),
+            )
+            result = cursor.fetchone()
+            if result:
+                return {
+                    "form_name": result[0],
+                    "category": result[1],
+                    "source_url": result[2],
+                    "match_type": "fuzzy_name",
+                    "similarity": result[3],
+                }
+
+            return None
+        finally:
+            cursor.close()
+            conn.close()
+    except Exception:
         return None
-    finally:
-        cursor.close()
-        conn.close()
 
 
 if __name__ == "__main__":
-    test_queries = ["skrotfordon", "avfallstaxa", "nedskrapning"]
+    test_queries = ["early_repayment", "financial_hardship"]
     for q in test_queries:
         result = resolve_form(q)
         print(f"Query: '{q}' -> {result}")

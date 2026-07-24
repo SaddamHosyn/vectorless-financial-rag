@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: rag_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sec_rag_db
+      POSTGRES_USER: raguser
+      POSTGRES_PASSWORD: ragpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U raguser -d sec_rag_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: rag_fastapi
+    restart: unless-stopped
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=sec_rag_db
+      - DB_USER=raguser
+      - DB_PASSWORD=ragpassword
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: .
+    container_name: rag_streamlit
+    restart: unless-stopped
+    command: streamlit run app/frontend.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=sec_rag_db
+      - DB_USER=raguser
+      - DB_PASSWORD=ragpassword
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

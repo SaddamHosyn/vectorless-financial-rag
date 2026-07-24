@@ -2,9 +2,9 @@ import streamlit as st
 from app.main import generate_answer, retrieve_chunks, embed_query
 from app.entity_resolver import resolve_form
 
-st.set_page_config(page_title="Mise RAG Assistant", page_icon="♻️")
-st.title("♻️ Mise.ax RAG Assistant")
-st.caption("Ask questions")
+st.set_page_config(page_title="Financial & Policy RAG Assistant", page_icon="🏦")
+st.title("🏦 Financial & Policy RAG Assistant")
+st.caption("Ask questions about loan terms, policies, repayment procedures, and account services")
 
 
 if "history" not in st.session_state:
@@ -19,13 +19,13 @@ if st.sidebar.button("Clear history"):
 
 with st.form(key="ask_form"):
     question = st.text_input(
-        "Ask a question:", placeholder="Vad kostar det att slänga skrotfordon?"
+        "Ask a question:", placeholder="e.g. What is the procedure for early loan repayment?"
     )
     submitted = st.form_submit_button("Ask")
 
 
 if submitted and question.strip():
-    with st.spinner("Searching and generating answer..."):
+    with st.spinner("Searching knowledge base and generating response..."):
         query_embedding = embed_query(question)
         chunks = retrieve_chunks(query_embedding)
         answer = generate_answer(question, chunks=chunks)
@@ -46,7 +46,7 @@ for entry in reversed(st.session_state.history):
     st.markdown(f"**A:** {entry['answer']}")
 
     if entry["form_match"]:
-        st.info(f"Possible related form: {entry['form_match']['form_name']}")
+        st.info(f"Related document/form: {entry['form_match']['form_name']}")
 
     if show_chunks:
         with st.expander("Retrieved chunks"):

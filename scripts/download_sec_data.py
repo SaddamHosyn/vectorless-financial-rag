@@ -1,7 +1,7 @@
 import requests
 import os
 
-HEADERS = {"User-Agent": "MiseAlandProject contact@example.com"}
+HEADERS = {"User-Agent": "CrosskeyRagProject contact@example.com"}
 RAW_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "raw")
 
 FILES = {

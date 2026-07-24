@@ -1,20 +1,25 @@
 import os
-from dotenv import load_dotenv
+import json
+import time
+import sqlite3
+import numpy as np
 from pathlib import Path
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from google.genai.errors import ServerError
 from app.config import get_connection
 from app.entity_resolver import resolve_form
-import time
-from google.genai.errors import ServerError
+from app.telemetry import telemetry
+from app.cache import query_cache
 
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-
 EMBED_MODEL = "gemini-embedding-001"
 GEN_MODEL = "gemini-3-flash-preview"
-TOP_K = 12
+TOP_K = 10
+SQLITE_DB_PATH = Path(__file__).resolve().parent.parent / "data" / "rag_knowledge.db"
 
 
 def embed_query(text: str):
@@ -26,7 +31,7 @@ def embed_query(text: str):
     return result.embeddings[0].values
 
 
-def retrieve_chunks(query_embedding, top_k=TOP_K):
+def retrieve_chunks_postgres(query_embedding, top_k=TOP_K):
     conn = get_connection()
     cursor = conn.cursor()
     try:
@@ -35,13 +40,7 @@ def retrieve_chunks(query_embedding, top_k=TOP_K):
             SELECT dc.chunk_text, d.filename, 1 - (dc.embedding <=> %s::vector) AS similarity
             FROM document_chunks dc
             JOIN documents d ON dc.document_id = d.id
-            ORDER BY 
-                (dc.embedding <=> %s::vector) 
-                - CASE 
-                    WHEN d.filename LIKE '%%2026%%' THEN 0.15
-                    WHEN d.filename LIKE '%%2025%%' THEN 0.08
-                    ELSE 0
-                  END
+            ORDER BY dc.embedding <=> %s::vector
             LIMIT %s;
             """,
             (query_embedding, query_embedding, top_k),
@@ -52,96 +51,179 @@ def retrieve_chunks(query_embedding, top_k=TOP_K):
         conn.close()
 
 
+def retrieve_chunks_sqlite(query_embedding, top_k=TOP_K):
+    if not SQLITE_DB_PATH.exists():
+        return []
+
+    conn = sqlite3.connect(SQLITE_DB_PATH)
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT dc.chunk_text, d.filename, dc.embedding
+            FROM document_chunks dc
+            JOIN documents d ON dc.document_id = d.id
+            """
+        )
+        rows = cursor.fetchall()
+        if not rows:
+            return []
+
+        q_vec = np.array(query_embedding, dtype=np.float32)
+        q_norm = np.linalg.norm(q_vec)
+
+        results = []
+        for text, filename, emb_json in rows:
+            emb_vec = np.array(json.loads(emb_json), dtype=np.float32)
+            denom = q_norm * np.linalg.norm(emb_vec)
+            sim = float(np.dot(q_vec, emb_vec) / denom) if denom > 0 else 0.0
+            results.append((text, filename, sim))
+
+        results.sort(key=lambda x: x[2], reverse=True)
+        return results[:top_k]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def retrieve_chunks(query_embedding, top_k=TOP_K):
+    try:
+        res = retrieve_chunks_postgres(query_embedding, top_k=top_k)
+        if res:
+            return res
+    except Exception:
+        pass
+    return retrieve_chunks_sqlite(query_embedding, top_k=top_k)
+
+
 def build_prompt(question, chunks):
     context = "\n\n".join(
         f"[Source: {filename}]\n{text}" for text, filename, _ in chunks
     )
-    return f"""You are a helpful assistant answering questions about mise.ax waste management services.
-Use ONLY the context below to answer. If the answer isn't in the context, say you don't know.
+    return f"""You are an AI assistant providing accurate information about financial policies, loan terms, customer support, and agreements based on internal documentation.
+Use ONLY the context below to answer the question. If the answer is not present in the context, clearly state that you do not know or that information is not available in the knowledge base.
 
-
-
-
-
-IMPORTANT RULES:
-- If sources show different years of pricing (e.g. 2022, 2023, 2024, 2025, 2026), ALWAYS use the most recent year's price and explicitly state which year it's from.
-- Do NOT combine or calculate prices by mixing figures from different years.
-- Do NOT perform your own arithmetic (like multiplying "sopmärken" or "säckar") unless the exact total price is explicitly stated in the same source.
-- Each context chunk may include a "[Rubrik: ...]" tag showing which document section it came from.
-- Important terminology clarification: "Ej verksamhetskund" and "icke Misekunder" in the tariff document refer to (1) businesses without a registered Mise account, OR (2) any visitor/household who does not live in one of Mise's member municipalities (Hammarland, Jomala, Kökar, Lumparland, Mariehamn, Sottunga) — regardless of whether they identify as a private person or a business. If the question mentions living outside a Mise municipality, or being from another region, use the "Ej verksamhetskund per besök" fee (20,00 €), NOT the general household "Avgift för icke uppvisande av Misekort" (6,00 €), since that lower fee only applies to residents within Mise's area who simply forgot their card.
-- For private household questions, ONLY use fees tagged under sections like "Grundavgifter", "Mottagningsavgifter... för hushåll", or similar wording that clearly says "hushåll". Ignore any fee tagged under a section mentioning "verksamhetskund" or "verksamheter" when answering about a private person, even if that chunk has a higher similarity score — UNLESS the question indicates the person lives outside Mise's member municipalities, in which case use the "Ej verksamhetskund" fee instead.
-- For business questions, ONLY use fees tagged under sections mentioning "verksamheter" or "verksamhetskund".
-- If you see the same fee type appearing under both a household-tagged section and a business-tagged section with different amounts, trust the [Rubrik] tag over anything else to decide which amount belongs in which category.
-- When a question is about Misekort fees, ÅVC visit fees, or any fee that could differ between private households and businesses, first check whether the actual fee amount, process, or eligibility differs between "Privatpersoner/Hushåll" and "Företag/Verksamheter" in the context. If the amounts and rules are IDENTICAL for both groups (e.g. a flat fee like skrotfordon), present ONE unified answer without splitting into two sections. Only structure your answer with two separate sections ("Privatpersoner/Hushåll" and "Företag/Verksamheter") when the fee, process, or eligibility genuinely differs between the two groups.
-- Do NOT guess a single fee when the context contains separate household and business rows. Use the [Rubrik: ...] tags to correctly assign each fee to the right category.
-- Do NOT state specific numeric limits (e.g. "up to 3 items free") unless that exact number appears verbatim in the source text describing that specific item. If you are not certain a number is stated, do not invent one.
-
-
-
-
+RULES:
+- Base your answers strictly on the retrieved context below.
+- Do not invent rules, fees, or procedural steps not stated in the source documents.
+- Always cite the source filename in brackets [Source: filename] next to relevant statements.
+- If multiple context chunks provide details, synthesize them into a clear, cohesive answer.
 
 Context:
 {context}
 
-
-
-
-
 Question: {question}
 
+Answer clearly with source citations:"""
 
 
+def generate_answer(question: str, chunks=None, retries=3, use_cache=True):
+    start_time = time.time()
 
+    # Check Cache
+    if use_cache:
+        cached_res = query_cache.get(question)
+        if cached_res:
+            latency = (time.time() - start_time) * 1000
+            telemetry.record_request(
+                question=question,
+                latency_ms=latency,
+                cached=True,
+                input_tokens=cached_res.get("input_tokens", 0),
+                output_tokens=cached_res.get("output_tokens", 0),
+                retrieved_count=len(cached_res.get("chunks", []))
+            )
+            cached_res["latency_ms"] = round(latency, 2)
+            cached_res["cached"] = True
+            return cached_res
 
-Answer clearly and cite the source filename in brackets after relevant sentences."""
-
-
-def generate_answer(question, chunks=None, retries=3):
+    # Retrieve if not cached
     if chunks is None:
         query_embedding = embed_query(question)
         chunks = retrieve_chunks(query_embedding)
 
     if not chunks:
-        return "Jag kunde inte hitta relevant information i kunskapsbasen."
+        latency = (time.time() - start_time) * 1000
+        res = {
+            "answer": "I could not find relevant information in the knowledge base.",
+            "chunks": [],
+            "latency_ms": round(latency, 2),
+            "cached": False,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "estimated_cost_usd": 0.0
+        }
+        telemetry.record_request(question, latency, cached=False)
+        return res
 
     prompt = build_prompt(question, chunks)
+    answer_text = ""
+    input_tokens = len(prompt.split()) * 1.3
+    output_tokens = 0
 
     for attempt in range(retries):
         try:
             response = client.models.generate_content(model=GEN_MODEL, contents=prompt)
-            return response.text
+            answer_text = response.text
+            output_tokens = len(answer_text.split()) * 1.3
+            break
         except ServerError as e:
             if attempt < retries - 1:
                 wait = 5 * (attempt + 1)
-                print(
-                    f"Server busy, retrying in {wait}s... (attempt {attempt + 1}/{retries})"
-                )
                 time.sleep(wait)
                 continue
-            return (
-                "Systemet är tillfälligt överbelastat. Försök igen om en liten stund."
-            )
+            answer_text = "System is temporarily overloaded. Please try again in a moment."
         except Exception as e:
             print(f"Unexpected error: {e}")
-            return "Ett oväntat fel uppstod. Försök igen om en liten stund."
+            answer_text = "An unexpected error occurred. Please try again."
+
+    latency = (time.time() - start_time) * 1000
+    telemetry_entry = telemetry.record_request(
+        question=question,
+        latency_ms=latency,
+        cached=False,
+        input_tokens=int(input_tokens),
+        output_tokens=int(output_tokens),
+        retrieved_count=len(chunks)
+    )
+
+    result = {
+        "answer": answer_text,
+        "chunks": [(text, fn, float(sim)) for text, fn, sim in chunks],
+        "latency_ms": round(latency, 2),
+        "cached": False,
+        "input_tokens": int(input_tokens),
+        "output_tokens": int(output_tokens),
+        "estimated_cost_usd": telemetry_entry["estimated_cost_usd"]
+    }
+
+    if use_cache and answer_text:
+        query_cache.set(question, result)
+
+    return result
 
 
 def ask(question: str):
+    res = generate_answer(question)
     form_match = resolve_form(question)
-    answer = generate_answer(question)
 
     print(f"\nQ: {question}")
     if form_match:
-        print(f"(Possible related form: {form_match['form_name']})")
-    print(f"A: {answer}\n")
-    return answer
+        print(f"(Possible related document/form: {form_match['form_name']})")
+    print(f"A: {res['answer']}")
+    print(f"[Stats: Latency={res['latency_ms']}ms | Cost=${res['estimated_cost_usd']:.6f} | Cached={res['cached']}]\n")
+    return res["answer"]
 
 
 if __name__ == "__main__":
     test_questions = [
-        "Vad kostar det att slänga skrotfordon?",
-        "Hur sorterar jag mitt avfall?",
-        "Vilka öppettider har återvinningscentralen?",
+        "What is the procedure for early loan repayment?",
+        "What is the procedure for early loan repayment?", # Tested to show cache hit latency!
+        "How are complaints handled according to the policy?",
+        "What options are available for financial hardship or job loss?",
     ]
     for q in test_questions:
         ask(q)
+
+    print("\n--- Telemetry Metrics Summary ---")
+    print(json.dumps(telemetry.get_metrics(), indent=2))
