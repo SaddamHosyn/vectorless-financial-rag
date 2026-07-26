@@ -43,41 +43,41 @@ A production-grade **LangGraph-Orchestrated 2-Stage Hybrid RAG** system engineer
 
 ```
 [ Financial PDFs & Policy TXT Files ]
-        |
-        v
+                │
+                ▼
 [ Ingestion Pipeline: scripts/ingest_data.py ]
-   ├── Text Extraction (pypdf, pdfplumber)
-   ├── Recursive Character Chunking (~1000 chars, 200 overlap)
-   └── Dense Embedding (Gemini gemini-embedding-001 -> 768 dims)
-        |
-        v
+ ├── Text Extraction (pypdf, pdfplumber)
+ ├── Recursive Character Chunking (~1000 chars, 200 overlap)
+ └── Dense Embedding (Gemini gemini-embedding-001 -> 768 dims)
+                │
+                ▼
 [ Dual-Database Vector Storage ]
-   ├── Primary: PostgreSQL + pgvector (document_chunks table, Cosine Index)
-   └── Failover: Local SQLite Vector Engine (data/rag_knowledge.db)
-        |
-        v
+ ├── Primary: PostgreSQL + pgvector (document_chunks table, Cosine Index)
+ └── Failover: Local SQLite Vector Engine (data/rag_knowledge.db)
+                │
+                ▼
 [ LangGraph Stateful RAG Workflow Engine: app/rag_graph.py ]
-   │
-   ├── Node 1: Cache Check Gate (app/cache.py -> SHA-256 TTL Cache)
-   │     ├── CACHE HIT  ==> Skip to Node 5 (Telemetry) -> Return sub-10ms Answer
-   │     └── CACHE MISS ==> Node 2
-   │
-   ├── Node 2: Embed & 2-Stage Retrieve (app/main.py)
-   │     ├── Stage 1: Gemini / HF SentenceTransformer Embedding
-   │     └── Stage 2: pgvector (Top-20) -> HF Cross-Encoder Reranker (Top-10)
-   │
-   ├── Node 3: Context Quality Gate
-   │     ├── Score > 0.30 -> 'good' (full generation)
-   │     └── Score <= 0.30 -> 'low' (generation with low-recall warning)
-   │
-   ├── Node 4: Gemini 3 Flash Generation (grounded, cited answer)
-   │
-   └── Node 5: MLOps Telemetry Logger (app/telemetry.py -> Latency, Tokens, Cost + Cache Write)
-        |
-        v
+ │
+ ├── Node 1: Cache Check Gate (app/cache.py -> SHA-256 TTL Cache)
+ │    ├── CACHE HIT  ==> Skip to Node 5 -> Return sub-10ms Answer
+ │    └── CACHE MISS ==> Node 2
+ │
+ ├── Node 2: Embed & 2-Stage Retrieve (app/main.py)
+ │    ├── Stage 1: Gemini / HF SentenceTransformer Embedding
+ │    └── Stage 2: pgvector (Top-20) -> HF Cross-Encoder Reranker (Top-10)
+ │
+ ├── Node 3: Context Quality Gate
+ │    ├── Score > 0.30  ==> 'good' (full generation)
+ │    └── Score <= 0.30 ==> 'low' (generation with low-recall warning)
+ │
+ ├── Node 4: Gemini 3 Flash Generation (grounded, cited answer)
+ │
+ └── Node 5: MLOps Telemetry Logger (app/telemetry.py -> Latency, Tokens, Cost + Cache)
+                │
+                ▼
 [ Serving Layer ]
-   ├── FastAPI REST API (app/api.py: /query, /health, /metrics, /eval)
-   └── Streamlit Interactive Web App (app/frontend.py)
+ ├── FastAPI REST API (app/api.py: /query, /health, /metrics, /eval)
+ └── Streamlit Interactive Web App (app/frontend.py)
 ```
 
 
