@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from app.config import get_connection
 
 conn = get_connection()
