@@ -3,6 +3,8 @@
 /docs/
 /scrape/
 /data/
+!data/rag_knowledge.db
+
 __pycache__/
 *.py[cod]
 *.log
