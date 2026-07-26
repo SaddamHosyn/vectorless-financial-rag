@@ -39,6 +39,8 @@ A production-grade **LangGraph-Orchestrated 2-Stage Hybrid RAG** system engineer
 
 ## 🏗️ Architecture & Data Flow
 
+![LangGraph Financial RAG Engine — System Architecture](docs/architecture.png)
+
 ```
 [ Financial PDFs & Policy TXT Files ]
         |

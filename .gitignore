@@ -1,6 +1,8 @@
 /.env
 /.env.*
-/docs/
+/docs/*.md
+/docs/*.png.private
+!docs/architecture.png
 /scrape/
 /data/
 !data/rag_knowledge.db
