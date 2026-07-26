@@ -34,9 +34,12 @@ if submitted and question.strip():
     st.session_state.history.append(
         {
             "question": question,
-            "answer": answer,
+            "answer": answer.get("answer", ""),
             "chunks": chunks,
             "form_match": form_match,
+            "latency_ms": answer.get("latency_ms", 0),
+            "cached": answer.get("cached", False),
+            "estimated_cost_usd": answer.get("estimated_cost_usd", 0),
         }
     )
 
@@ -44,6 +47,7 @@ if submitted and question.strip():
 for entry in reversed(st.session_state.history):
     st.markdown(f"**Q:** {entry['question']}")
     st.markdown(f"**A:** {entry['answer']}")
+    st.caption(f"⏱ {entry['latency_ms']:.0f}ms | 💰 ${entry['estimated_cost_usd']:.6f} | {'⚡ Cached' if entry['cached'] else '🔍 Live'}")
 
     if entry["form_match"]:
         st.info(f"Related document/form: {entry['form_match']['form_name']}")

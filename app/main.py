@@ -12,6 +12,7 @@ from app.config import get_connection
 from app.entity_resolver import resolve_form
 from app.telemetry import telemetry
 from app.cache import query_cache
+from app.reranker import reranker
 
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
@@ -21,6 +22,7 @@ TOP_K = 10
 SQLITE_DB_PATH = Path(__file__).resolve().parent.parent / "data" / "rag_knowledge.db"
 
 _client = None
+_local_embedder = None
 
 
 def get_client():
@@ -33,22 +35,45 @@ def get_client():
     return _client
 
 
+def get_local_embedder():
+    global _local_embedder
+    if _local_embedder is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+            print("[Embedder] Loading Hugging Face local SentenceTransformer...")
+            _local_embedder = SentenceTransformer("all-MiniLM-L6-v2")
+        except Exception as e:
+            print(f"[Embedder Notice] Could not load local SentenceTransformer ({e}). Using baseline fallback vector.")
+            _local_embedder = "FALLBACK"
+    return _local_embedder
+
+
 def embed_query(text: str):
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not api_key or api_key == "dummy_key_for_testing":
-        return [0.01] * 768
+    if api_key and api_key != "dummy_key_for_testing":
+        try:
+            client = get_client()
+            result = client.models.embed_content(
+                model=EMBED_MODEL,
+                contents=text,
+                config=types.EmbedContentConfig(output_dimensionality=768),
+            )
+            return result.embeddings[0].values
+        except Exception as e:
+            print(f"Gemini Embedding API notice ({e}). Attempting Hugging Face local fallback...")
 
-    try:
-        client = get_client()
-        result = client.models.embed_content(
-            model=EMBED_MODEL,
-            contents=text,
-            config=types.EmbedContentConfig(output_dimensionality=768),
-        )
-        return result.embeddings[0].values
-    except Exception as e:
-        print(f"Embedding API notice ({e}). Returning fallback vector.")
-        return [0.01] * 768
+    # Fallback to local Hugging Face SentenceTransformer
+    embedder = get_local_embedder()
+    if embedder != "FALLBACK" and embedder is not None:
+        try:
+            vec = embedder.encode(text).tolist()
+            if len(vec) < 768:
+                vec = vec + [0.01] * (768 - len(vec))
+            return vec[:768]
+        except Exception as e:
+            print(f"Local embedding notice ({e}).")
+
+    return [0.01] * 768
 
 
 def retrieve_chunks_postgres(query_embedding, top_k=TOP_K):
@@ -106,14 +131,30 @@ def retrieve_chunks_sqlite(query_embedding, top_k=TOP_K):
         conn.close()
 
 
-def retrieve_chunks(query_embedding, top_k=TOP_K):
+def retrieve_chunks(query_embedding, top_k=TOP_K, query: str = None):
+    """
+    2-Stage Enterprise Retrieval:
+    1. Bi-Encoder dense vector retrieval (fetches top candidate pool).
+    2. Hugging Face Cross-Encoder reranking (filters & sorts to top_k).
+    """
+    initial_k = max(20, top_k * 2)
+    candidates = []
     try:
-        res = retrieve_chunks_postgres(query_embedding, top_k=top_k)
-        if res:
-            return res
+        candidates = retrieve_chunks_postgres(query_embedding, top_k=initial_k)
     except Exception:
         pass
-    return retrieve_chunks_sqlite(query_embedding, top_k=top_k)
+
+    if not candidates:
+        candidates = retrieve_chunks_sqlite(query_embedding, top_k=initial_k)
+
+    if not candidates:
+        return []
+
+    # Stage 2: Hugging Face Cross-Encoder Reranking
+    if query:
+        return reranker.rerank(query, candidates, top_k=top_k)
+    return candidates[:top_k]
+
 
 
 def build_prompt(question, chunks):
@@ -160,7 +201,7 @@ def generate_answer(question: str, chunks=None, retries=3, use_cache=True):
     # Retrieve if not cached
     if chunks is None:
         query_embedding = embed_query(question)
-        chunks = retrieve_chunks(query_embedding)
+        chunks = retrieve_chunks(query_embedding, query=question)
 
     if not chunks:
         latency = (time.time() - start_time) * 1000
