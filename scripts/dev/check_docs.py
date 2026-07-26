@@ -6,7 +6,7 @@ from app.config import get_connection
 conn = get_connection()
 cursor = conn.cursor()
 cursor.execute(
-    "SELECT chunk_text, filename FROM document_chunks dc JOIN documents d ON dc.document_id = d.id WHERE chunk_text LIKE '%3 stycken%' OR chunk_text LIKE '%kylmöbler%';"
+    "SELECT chunk_text, filename FROM document_chunks dc JOIN documents d ON dc.document_id = d.id WHERE chunk_text LIKE '%financial hardship%' OR chunk_text LIKE '%early repayment%';"
 )
 rows = cursor.fetchall()
 print(f"Found {len(rows)} rows")

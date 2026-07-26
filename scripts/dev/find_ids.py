@@ -7,7 +7,7 @@ conn = get_connection()
 cursor = conn.cursor()
 
 cursor.execute(
-    "SELECT id, filename FROM documents WHERE filename LIKE '%avfallstaxa-2026%';"
+    "SELECT id, filename FROM documents WHERE filename LIKE '%Complaints%' OR filename LIKE '%repayment%' OR filename LIKE '%hardship%';"
 )
 rows = cursor.fetchall()
 

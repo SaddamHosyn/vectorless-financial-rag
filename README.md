@@ -154,7 +154,7 @@ Create a `.env` file:
 GEMINI_API_KEY=your_gemini_api_key_here
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=sec_rag_db
+DB_NAME=bondora_rag_db
 DB_USER=raguser
 DB_PASSWORD=ragpassword
 ```

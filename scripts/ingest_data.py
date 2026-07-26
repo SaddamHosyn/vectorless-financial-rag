@@ -63,7 +63,7 @@ def try_get_postgres_connection():
         conn = psycopg2.connect(
             host=os.environ.get("DB_HOST", "localhost"),
             port=os.environ.get("DB_PORT", "5432"),
-            dbname=os.environ.get("DB_NAME", "sec_rag_db"),
+            dbname=os.environ.get("DB_NAME", "bondora_rag_db"),
             user=os.environ.get("DB_USER", "raguser"),
             password=os.environ.get("DB_PASSWORD", "ragpassword"),
             connect_timeout=5
