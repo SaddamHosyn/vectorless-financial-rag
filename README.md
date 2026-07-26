@@ -243,24 +243,34 @@ mise-rag-project/
 ├── app/
 │   ├── api.py               # Production FastAPI REST Endpoints (/query, /metrics, /eval)
 │   ├── main.py              # Core RAG engine, retrieval logic, & prompt assembly
+│   ├── rag_graph.py         # LangGraph stateful 5-node RAG workflow engine
+│   ├── reranker.py          # Hugging Face Cross-Encoder reranking module
 │   ├── frontend.py          # Interactive Streamlit Web Interface
 │   ├── telemetry.py         # Latency (p50, p95, p99), token & cost observability tracker
 │   ├── cache.py             # Sub-10ms response cache engine
 │   ├── config.py            # PostgreSQL database connector
 │   └── entity_resolver.py   # Document form resolver
+├── db/
+│   └── init.sql             # PostgreSQL vector extension database schema
 ├── scripts/
 │   ├── ingest_data.py       # Ingestion script for policies & PDFs
 │   ├── evaluate_rag.py      # Automated benchmark suite (Hit@10, Faithfulness, Latency, Cost)
 │   ├── generate_dataset_summary.py # Bondora loan dataset metrics generator
-│   └── clear_pgvector.py    # Database cleanup utility
+│   ├── clear_pgvector.py    # Database cleanup utility
+│   ├── run_etl_pipeline.sh  # Master ETL and evaluation pipeline runner
+│   └── dev/                 # Internal developer tools & debugging scripts
+│       ├── check_db.py
+│       ├── check_docs.py
+│       ├── delete_docs.py
+│       ├── find_ids.py
+│       └── test_gemini.py
 ├── scrape/data/
-│   ├── LoanData_Bondora.csv # Bondora 179k loan dataset
+│   ├── LoanData_Bondora.csv # Bondora loan dataset
 │   └── policies/            # Financial agreements, PDFs, & policy text files
 ├── .github/workflows/
 │   └── ci.yml               # GitHub Actions CI/CD workflow
 ├── Dockerfile               # Production multi-stage Docker container build
 ├── docker-compose.yml       # PostgreSQL pgvector + FastAPI + Streamlit orchestrator
-├── init.sql                 # PostgreSQL vector extension database schema
 ├── requirements.txt         # Python dependencies
 └── README.md                # System documentation
 ```

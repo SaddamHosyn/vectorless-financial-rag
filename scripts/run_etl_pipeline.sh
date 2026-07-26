@@ -1,10 +1,10 @@
 #!/bin/bash
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
-echo "Step 1: Downloading SEC bulk data..."
-python scripts/download_sec_data.py
+echo "Step 1: Running document ingestion & embedding pipeline..."
+python scripts/ingest_data.py
 
-echo "Step 2: Running ETL and cleanup..."
-python scripts/etl_and_cleanup.py
+echo "Step 2: Running automated evaluation benchmark..."
+python scripts/evaluate_rag.py
 
-echo "Pipeline complete!"
+echo "Pipeline execution complete!"
