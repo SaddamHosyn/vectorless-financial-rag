@@ -1,6 +1,15 @@
+import sys
+from pathlib import Path
+
+# Add project root directory to sys.path for Streamlit Cloud deployment
+root_dir = Path(__file__).resolve().parent.parent
+if str(root_dir) not in sys.path:
+    sys.path.insert(0, str(root_dir))
+
 import streamlit as st
 from app.main import generate_answer, retrieve_chunks, embed_query
 from app.entity_resolver import resolve_form
+
 
 st.set_page_config(page_title="Financial & Policy RAG Assistant", page_icon="🏦")
 st.title("🏦 Financial & Policy RAG Assistant")
