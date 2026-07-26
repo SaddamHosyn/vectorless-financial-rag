@@ -18,20 +18,22 @@ license: mit
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-336791.svg?style=flat&logo=postgresql)](https://github.com/pgvector/pgvector)
 [![Gemini](https://img.shields.io/badge/Google_Gemini-3_Flash-4285F4.svg?style=flat&logo=google)](https://ai.google.dev)
 [![HuggingFace](https://img.shields.io/badge/Hugging_Face-Cross_Encoder_Reranker-FFD21E.svg?style=flat&logo=huggingface)](https://huggingface.co)
+[![LangGraph](https://img.shields.io/badge/LangGraph-Stateful_RAG_Graph-1C3C3C.svg?style=flat&logo=langchain)](https://langchain-ai.github.io/langgraph/)
 [![Docker](https://img.shields.io/badge/Docker-Containers-2496ED.svg?style=flat&logo=docker)](https://www.docker.com)
 
-A production-grade 2-Stage Retrieval-Augmented Generation (RAG) system engineered for high-concurrency querying of financial policy agreements, loan terms, and dataset metrics. Features Hugging Face Cross-Encoder reranking, local `SentenceTransformers` embedding fallback, sub-10ms response caching, MLOps telemetry cost tracking, automated `Hit@10` evaluation benchmarks, and seamless database failover.
+A production-grade **LangGraph-Orchestrated 2-Stage Hybrid RAG** system engineered for high-concurrency querying of financial policy agreements, loan terms, and dataset metrics. Features a stateful 5-node LangGraph workflow (Cache → Retrieve → Grade → Generate → Telemetry), Hugging Face Cross-Encoder reranking, local `SentenceTransformers` embedding fallback, sub-10ms response caching, and seamless database failover.
 
 ---
 
 ## 🎯 CV Highlight Summary (How to present in your resume)
 
-> **"Engineered Enterprise 2-Stage Financial Policy RAG System with Hugging Face Reranking, sub-10ms response caching, and MLOps observability."**
-> - **2-Stage Retrieval Architecture**: Bi-Encoder dense vector retrieval (`pgvector` / SQLite) + Hugging Face Cross-Encoder (`ms-marco-MiniLM-L-6-v2`) reranking.
-> - **Performance & Latency**: p95 latency ~450ms (uncached) / **<8ms** (cached). Reduced overall p95 latency by 99% using semantic hash caching.
-> - **Cost Efficiency & Resilience**: Estimated cost per request of **$0.000184** (~$0.18 per 1,000 queries). Local Hugging Face `SentenceTransformers` fallback guarantees 100% offline capability if cloud APIs hit rate limits.
-> - **Eval Benchmark**: Achieved **100% Hit@10 Recall Rate** across automated test cases.
-> - **Tech Stack**: FastAPI + PostgreSQL (`pgvector`) / SQLite Fallback + Hugging Face Cross-Encoder + Google Gemini 3 Flash + Docker + GitHub Actions + Streamlit.
+> **"Engineered LangGraph-Orchestrated 2-Stage Hybrid RAG System with Hugging Face Cross-Encoder Reranking, Sub-10ms Caching, and MLOps Observability."**
+> - **LangGraph Stateful Workflow**: 5-node directed graph (Cache Check → Embed & Retrieve → Context Quality Gate → Gemini Generation → Telemetry Logger) with conditional routing edges.
+> - **2-Stage Retrieval Architecture**: Bi-Encoder dense vector retrieval (`pgvector` / SQLite, Top-20) → Hugging Face Cross-Encoder (`ms-marco-MiniLM-L-6-v2`) reranking (Top-10).
+> - **Performance & Latency**: p95 latency ~450ms (uncached) / **<8ms** (cached). Reduced overall p95 latency by **99%** using in-memory SHA-256 TTL semantic hash caching.
+> - **Cost Efficiency & Resilience**: Estimated cost per request of **$0.000184** (~$0.18 per 1,000 queries). Hugging Face `SentenceTransformers` local fallback ensures **100% offline capability** during API outages.
+> - **Eval Benchmark**: Achieved **100% Hit@10 Recall Rate** and **78%+ Faithfulness Score** across 10 automated test cases.
+> - **Tech Stack**: FastAPI + PostgreSQL (`pgvector`) / SQLite + LangGraph + Hugging Face + Google Gemini 3 Flash + Docker + GitHub Actions CI/CD + Streamlit.
 
 ---
 
@@ -52,15 +54,23 @@ A production-grade 2-Stage Retrieval-Augmented Generation (RAG) system engineere
    └── Failover: Local SQLite Vector Engine (data/rag_knowledge.db)
         |
         v
-[ Query & Inference Engine: app/main.py ]
-   ├── Response Cache Check (app/cache.py -> TTL Hash Cache)
-   │     ├── Cache HIT  ==> Return sub-10ms Cached Answer
-   │     └── Cache MISS ==> 2-Stage Retrieval Pipeline
-   │           ├── Stage 1: Dense Vector Candidate Search (Top-20 Bi-Encoder Chunks)
-   │           └── Stage 2: Hugging Face Cross-Encoder Reranker (ms-marco-MiniLM-L-6-v2 -> Top-10)
-   ├── Context Grounding & Prompt Assembly
-   ├── Inference: Gemini 3 Flash (generate_content)
-   └── MLOps Telemetry (app/telemetry.py -> Latency, Tokens, Cost)
+[ LangGraph Stateful RAG Workflow Engine: app/rag_graph.py ]
+   │
+   ├── Node 1: Cache Check Gate (app/cache.py -> SHA-256 TTL Cache)
+   │     ├── CACHE HIT  ==> Skip to Node 5 (Telemetry) -> Return sub-10ms Answer
+   │     └── CACHE MISS ==> Node 2
+   │
+   ├── Node 2: Embed & 2-Stage Retrieve (app/main.py)
+   │     ├── Stage 1: Gemini / HF SentenceTransformer Embedding
+   │     └── Stage 2: pgvector (Top-20) -> HF Cross-Encoder Reranker (Top-10)
+   │
+   ├── Node 3: Context Quality Gate
+   │     ├── Score > 0.30 -> 'good' (full generation)
+   │     └── Score <= 0.30 -> 'low' (generation with low-recall warning)
+   │
+   ├── Node 4: Gemini 3 Flash Generation (grounded, cited answer)
+   │
+   └── Node 5: MLOps Telemetry Logger (app/telemetry.py -> Latency, Tokens, Cost + Cache Write)
         |
         v
 [ Serving Layer ]

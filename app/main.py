@@ -179,96 +179,91 @@ Answer clearly with source citations:"""
 
 
 def generate_answer(question: str, chunks=None, retries=3, use_cache=True):
-    start_time = time.time()
-
-    # Check Cache
-    if use_cache:
-        cached_res = query_cache.get(question)
-        if cached_res:
+    """
+    Main RAG entry point.
+    When chunks are NOT pre-supplied, runs the full LangGraph Stateful RAG Graph:
+      cache_check → embed_retrieve → grade_context → generate → telemetry
+    When chunks ARE supplied (e.g. from API / evaluate_rag.py), uses the
+    direct path to avoid double-retrieval (backwards-compatible).
+    """
+    # ── Direct path: chunks pre-supplied (used by evaluate_rag.py & api.py) ──
+    if chunks is not None:
+        start_time = time.time()
+        if not chunks:
             latency = (time.time() - start_time) * 1000
-            telemetry.record_request(
-                question=question,
-                latency_ms=latency,
-                cached=True,
-                input_tokens=cached_res.get("input_tokens", 0),
-                output_tokens=cached_res.get("output_tokens", 0),
-                retrieved_count=len(cached_res.get("chunks", []))
-            )
-            cached_res["latency_ms"] = round(latency, 2)
-            cached_res["cached"] = True
-            return cached_res
+            res = {
+                "answer": "I could not find relevant information in the knowledge base.",
+                "chunks": [],
+                "latency_ms": round(latency, 2),
+                "cached": False,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "estimated_cost_usd": 0.0,
+            }
+            telemetry.record_request(question, latency, cached=False)
+            return res
 
-    # Retrieve if not cached
-    if chunks is None:
-        query_embedding = embed_query(question)
-        chunks = retrieve_chunks(query_embedding, query=question)
+        prompt = build_prompt(question, chunks)
+        answer_text = ""
+        input_tokens = int(len(prompt.split()) * 1.3)
+        output_tokens = 0
 
-    if not chunks:
+        api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+        if not api_key or api_key == "dummy_key_for_testing":
+            snippets = [f"[{fn}] {text[:150]}" for text, fn, _ in chunks[:3]]
+            answer_text = "Context retrieved: " + " | ".join(snippets)
+        else:
+            for attempt in range(retries):
+                try:
+                    client = get_client()
+                    response = client.models.generate_content(model=GEN_MODEL, contents=prompt)
+                    answer_text = response.text
+                    output_tokens = int(len(answer_text.split()) * 1.3)
+                    break
+                except ServerError:
+                    if attempt < retries - 1:
+                        time.sleep(5 * (attempt + 1))
+                        continue
+                    answer_text = "System is temporarily overloaded. Please try again."
+                except Exception as exc:
+                    print(f"Unexpected error ({exc}). Using context summary fallback.")
+                    snippets = [f"[{fn}] {text[:150]}" for text, fn, _ in chunks[:3]]
+                    answer_text = "Context retrieved: " + " | ".join(snippets)
+                    break
+
         latency = (time.time() - start_time) * 1000
-        res = {
-            "answer": "I could not find relevant information in the knowledge base.",
-            "chunks": [],
+        telemetry_entry = telemetry.record_request(
+            question=question,
+            latency_ms=latency,
+            cached=False,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            retrieved_count=len(chunks),
+        )
+        result = {
+            "answer": answer_text,
+            "chunks": [(text, fn, float(sim)) for text, fn, sim in chunks],
             "latency_ms": round(latency, 2),
             "cached": False,
-            "input_tokens": 0,
-            "output_tokens": 0,
-            "estimated_cost_usd": 0.0
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "estimated_cost_usd": telemetry_entry["estimated_cost_usd"],
         }
-        telemetry.record_request(question, latency, cached=False)
-        return res
+        if use_cache and answer_text:
+            query_cache.set(question, result)
+        return result
 
-    prompt = build_prompt(question, chunks)
-    answer_text = ""
-    input_tokens = len(prompt.split()) * 1.3
-    output_tokens = 0
-
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not api_key or api_key == "dummy_key_for_testing":
-        context_snippets = [f"[{fn}] {text[:150]}" for text, fn, _ in chunks[:3]]
-        answer_text = "Context retrieved: " + " | ".join(context_snippets)
-    else:
-        for attempt in range(retries):
-            try:
-                client = get_client()
-                response = client.models.generate_content(model=GEN_MODEL, contents=prompt)
-                answer_text = response.text
-                output_tokens = len(answer_text.split()) * 1.3
-                break
-            except ServerError as e:
-                if attempt < retries - 1:
-                    wait = 5 * (attempt + 1)
-                    time.sleep(wait)
-                    continue
-                answer_text = "System is temporarily overloaded. Please try again in a moment."
-            except Exception as e:
-                print(f"Unexpected error ({e}). Using context summary fallback.")
-                context_snippets = [f"[{fn}] {text[:150]}" for text, fn, _ in chunks[:3]]
-                answer_text = "Context retrieved: " + " | ".join(context_snippets)
-
-    latency = (time.time() - start_time) * 1000
-    telemetry_entry = telemetry.record_request(
-        question=question,
-        latency_ms=latency,
-        cached=False,
-        input_tokens=int(input_tokens),
-        output_tokens=int(output_tokens),
-        retrieved_count=len(chunks)
-    )
-
-    result = {
-        "answer": answer_text,
-        "chunks": [(text, fn, float(sim)) for text, fn, sim in chunks],
-        "latency_ms": round(latency, 2),
-        "cached": False,
-        "input_tokens": int(input_tokens),
-        "output_tokens": int(output_tokens),
-        "estimated_cost_usd": telemetry_entry["estimated_cost_usd"]
-    }
-
-    if use_cache and answer_text:
-        query_cache.set(question, result)
-
-    return result
+    # ── LangGraph path: full stateful graph (standard user requests) ──
+    try:
+        from app.rag_graph import run_rag_graph
+        return run_rag_graph(question, use_cache=use_cache)
+    except Exception as exc:
+        # Graceful degradation: if LangGraph fails for any reason, fall back
+        print(f"[LangGraph Notice] Graph execution error ({exc}). Using direct path fallback.")
+        start_time = time.time()
+        query_embedding = embed_query(question)
+        fallback_chunks = retrieve_chunks(query_embedding, query=question)
+        return generate_answer(question, chunks=fallback_chunks, retries=retries, use_cache=use_cache)
 
 
 def ask(question: str):
