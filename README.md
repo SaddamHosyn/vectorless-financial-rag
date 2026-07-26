@@ -13,7 +13,7 @@ license: mit
 # 🏦 Production Financial & Policy RAG Architecture Engine
 
 
-[![CI/CD MLOps Pipeline](https://github.com/SaddamHosyn/mise-rag-project/actions/workflows/ci.yml/badge.svg)](https://github.com/SaddamHosyn/mise-rag-project/actions/workflows/ci.yml)
+[![CI/CD MLOps Pipeline](https://github.com/SaddamHosyn/vectorless-financial-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/SaddamHosyn/vectorless-financial-rag/actions/workflows/ci.yml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-336791.svg?style=flat&logo=postgresql)](https://github.com/pgvector/pgvector)
 [![Gemini](https://img.shields.io/badge/Google_Gemini-3_Flash-4285F4.svg?style=flat&logo=google)](https://ai.google.dev)
@@ -88,11 +88,11 @@ Automated evaluation benchmarks are executed via `python scripts/evaluate_rag.py
 | Metric | Measured Value | Benchmark Description |
 | --- | --- | --- |
 | **Retrieval Recall (Hit@10)** | **100.0%** | Proportion of ground-truth target documents present in top-10 chunks |
-| **Faithfulness Accuracy** | **90.0%** | Fact verification score against target policy ground truth |
+| **Faithfulness Accuracy** | **78.0%** | Fact verification score against target policy ground truth |
 | **Cached Query Latency** | **< 8 ms** | Sub-10ms response execution for cached requests |
 | **Uncached p50 Latency** | **~420 ms** | Median response latency for end-to-end vector search + Gemini generation |
-| **Avg Cost / Request** | **$0.000246** | Estimated Google API cost per query (embeddings + generation tokens) |
-| **Cost / 1,000 Queries** | **$0.2460** | Operational model execution cost per 1,000 user requests |
+| **Avg Cost / Request** | **$0.000184** | Estimated Google API cost per query (embeddings + generation tokens) |
+| **Cost / 1,000 Queries** | **$0.1840** | Operational model execution cost per 1,000 user requests |
 
 ---
 
@@ -142,8 +142,8 @@ During system stress testing and migration, three critical engineering issues we
 
 ### 1. Clone & Setup Environment
 ```bash
-git clone https://github.com/SaddamHosyn/mise-rag-project.git
-cd mise-rag-project
+git clone https://github.com/SaddamHosyn/vectorless-financial-rag.git
+cd vectorless-financial-rag
 pip install -r requirements.txt
 ```
 
@@ -239,7 +239,7 @@ Access Services:
 ## 📂 Project Structure
 
 ```
-mise-rag-project/
+vectorless-financial-rag/
 ├── app/
 │   ├── api.py               # Production FastAPI REST Endpoints (/query, /metrics, /eval)
 │   ├── main.py              # Core RAG engine, retrieval logic, & prompt assembly
